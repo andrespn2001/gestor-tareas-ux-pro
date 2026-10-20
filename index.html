@@ -3,35 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ANDRES LUCAS — Gestor de Tareas PRO MAX</title>
+    <title>TaskFlow AI - Andrés Lucas</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="notificaciones"></div>
 
-    <div id="notifications"></div>
+    <div class="app">
+        <h1>🤖 TaskFlow AI</h1>
+        <div id="contador">0 tareas pendientes</div>
 
-    <div class="app-container">
-        <header>
-            <h1>☁️ ANDRES LUCAS PRO MAX</h1>
-            <div class="counter-badge"><span id="contador">0</span> tareas pendientes</div>
-            
-            <label class="offline-toggle">
-                <input type="checkbox" id="offlineSwitch"> 📴 Offline
-            </label>
-        </header>
-        
-        <div class="controls">
-            <div class="input-group">
-                <input type="text" id="taskInput" placeholder="Nueva tarea...">
-                <button class="btn-primary" id="addButton" onclick="addTask()">Añadir</button>
-            </div>
-            <div class="action-row">
-                <button class="btn-secondary" style="flex:1" onclick="recargarForzado(this)">🔄 Recargar</button>
-            </div>
+        <div class="controles">
+            <input type="text" id="input-tarea" placeholder="Nueva tarea...">
+            <select id="input-categoria">
+                <option value="Personal">🏠 Personal</option>
+                <option value="Trabajo">💼 Trabajo</option>
+                <option value="Estudio">📚 Estudio</option>
+            </select>
+            <button id="btn-ia">🪄</button>
+            <button id="btn-añadir">Añadir</button>
         </div>
-
-        <ul id="taskList"></ul>
+        
+        <button id="btn-csv">📥 Exportar CSV</button>
+        <ul id="lista-tareas"></ul>
     </div>
 
     <script src="app.js"></script>
