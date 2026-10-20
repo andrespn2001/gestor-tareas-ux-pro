@@ -1,7 +1,7 @@
 // ==========================================
-// 1. CONFIGURACIÓN
+// 1. CONFIGURACIÓN (CON SDK OFICIAL)
 // ==========================================
-// ⚠️ PEGA TU CLAVE AQUÍ ABAJO (la que empieza por AQ.)
+// ⚠️ PEGA TU CLAVE AQUÍ (la que empieza por AQ.)
 const API_KEY = 'AQ.Ab8RN6LhDK7U4SdOqUhbqeu_k8UOFi_LNob-HknDH2BVkPTz4w'; 
 
 const input = document.getElementById('input-tarea');
@@ -47,13 +47,7 @@ function dibujar() {
 // ==========================================
 function añadirTarea() {
     if (input.value.trim() === '') return aviso('Escribe algo primero');
-    
-    tareas.push({
-        texto: input.value,
-        categoria: categoria.value,
-        completada: false
-    });
-    
+    tareas.push({ texto: input.value, categoria: categoria.value, completada: false });
     input.value = '';
     guardar();
     dibujar();
@@ -87,7 +81,7 @@ function exportarCSV() {
 }
 
 // ==========================================
-// 4. INTELIGENCIA ARTIFICIAL (GEMINI)
+// 4. INTELIGENCIA ARTIFICIAL (CON SDK OFICIAL)
 // ==========================================
 async function usarIA() {
     if (input.value.trim() === '') return aviso('Escribe la tarea para usar la IA');
@@ -95,26 +89,17 @@ async function usarIA() {
     aviso('🤖 La IA está pensando...');
     
     try {
+        // Importamos la librería oficial de Google
+        const { GoogleGenerativeAI } = await import('https://esm.run/@google/generative-ai');
+        
+        // Creamos el cliente con tu clave AQ.
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        // Pedimos la clasificación
         const prompt = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
-        
-        // Usamos gemini-pro y el método estándar de URL (el más compatible)
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
-        
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                contents: [{ parts: [{ text: prompt }] }] 
-            })
-        });
-        
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error.message || "Error de Google");
-        }
-
-        const data = await res.json();
-        const respuesta = data.candidates[0].content.parts[0].text.trim();
+        const result = await model.generateContent(prompt);
+        const respuesta = result.response.text().trim();
         
         // Asignamos la categoría
         if (respuesta.includes('Trabajo')) categoria.value = 'Trabajo';
