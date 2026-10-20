@@ -1,4 +1,87 @@
-// --- FUNCIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI - VERSIÓN ACTUALIZADA) ---
+// --- CONFIGURACIÓN ---
+// ⚠️ AQUÍ TIENES QUE PEGAR TU CLAVE DE GOOGLE ENTRE LAS COMILLAS
+const API_KEY = 'AQ.Ab8RN6L4Flrv_1BDx2wbS-S0n5hL9xcy7wKDZNsrU95i-wUWvA'; 
+
+// --- ELEMENTOS DEL HTML ---
+const input = document.getElementById('input-tarea');
+const categoria = document.getElementById('input-categoria');
+const lista = document.getElementById('lista-tareas');
+const contador = document.getElementById('contador');
+const notificacion = document.getElementById('notificaciones');
+
+let tareas = JSON.parse(localStorage.getItem('misTareas')) || [];
+
+// --- FUNCIONES BÁSICAS ---
+function guardar() {
+    localStorage.setItem('misTareas', JSON.stringify(tareas));
+}
+
+function aviso(msg) {
+    notificacion.textContent = msg;
+    notificacion.style.display = 'block';
+    setTimeout(() => notificacion.style.display = 'none', 3000);
+}
+
+function dibujar() {
+    lista.innerHTML = '';
+    let pendientes = 0;
+    
+    tareas.forEach((t, index) => {
+        if (!t.completada) pendientes++;
+        const li = document.createElement('li');
+        if (t.completada) li.className = 'completada';
+        li.innerHTML = `
+            <div onclick="cambiarEstado(${index})">${t.texto} <span class="tag">${t.categoria}</span></div>
+            <button onclick="borrar(${index})">🗑</button>
+        `;
+        lista.appendChild(li);
+    });
+    contador.textContent = `${pendientes} tareas pendientes`;
+}
+
+// --- FUNCIONES PRINCIPALES ---
+function añadirTarea() {
+    if (input.value.trim() === '') return aviso('Escribe algo primero');
+    
+    tareas.push({
+        texto: input.value,
+        categoria: categoria.value,
+        completada: false
+    });
+    
+    input.value = '';
+    guardar();
+    dibujar();
+    aviso('Tarea añadida ✅');
+}
+
+function cambiarEstado(index) {
+    tareas[index].completada = !tareas[index].completada;
+    guardar();
+    dibujar();
+}
+
+function borrar(index) {
+    tareas.splice(index, 1);
+    guardar();
+    dibujar();
+}
+
+function exportarCSV() {
+    if (tareas.length === 0) return aviso('No hay tareas');
+    let csv = "Tarea,Categoria,Completada\n";
+    tareas.forEach(t => {
+        csv += `"${t.texto}",${t.categoria},${t.completada ? 'Si' : 'No'}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mis_tareas.csv';
+    a.click();
+    aviso('CSV descargado 📥');
+}
+
+// --- FUNCIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI) ---
 async function usarIA() {
     if (input.value.trim() === '') return aviso('Escribe la tarea para usar la IA');
     
@@ -7,7 +90,6 @@ async function usarIA() {
     try {
         const prompt = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
         
-        // Usamos el modelo 1.5-flash y el endpoint que acepta cualquier clave
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -15,7 +97,8 @@ async function usarIA() {
         });
         
         if (!res.ok) {
-            throw new Error("Error en la petición a Google");
+            const errorData = await res.json();
+            throw new Error(errorData.error.message || "Error en la petición");
         }
 
         const data = await res.json();
@@ -27,7 +110,15 @@ async function usarIA() {
         
         aviso(`🪄 IA aplicada: ${categoria.value}`);
     } catch (error) {
-        console.error(error);
-        aviso('❌ Error con la IA. Revisa la consola (F12).');
+        console.error("Error de la IA:", error);
+        aviso(`❌ Error: ${error.message}`);
     }
 }
+
+// --- CONECTAR BOTONES ---
+document.getElementById('btn-añadir').addEventListener('click', añadirTarea);
+document.getElementById('btn-ia').addEventListener('click', usarIA);
+document.getElementById('btn-csv').addEventListener('click', exportarCSV);
+
+// --- INICIO ---
+dibujar();
