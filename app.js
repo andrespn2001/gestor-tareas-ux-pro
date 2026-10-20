@@ -1,5 +1,5 @@
 // ==========================================
-// 1. CONFIGURACIÓN
+// 1. CONFIGURACIÓN (SIN CLAVES, SIN ERRORES)
 // ==========================================
 const input = document.getElementById('input-tarea');
 const categoria = document.getElementById('input-categoria');
@@ -10,7 +10,7 @@ const notificacion = document.getElementById('notificaciones');
 let tareas = JSON.parse(localStorage.getItem('misTareas')) || [];
 
 // ==========================================
-// 2. FUNCIONES BÁSICAS (UI)
+// 2. FUNCIONES BÁSICAS
 // ==========================================
 function guardar() {
     localStorage.setItem('misTareas', JSON.stringify(tareas));
@@ -40,7 +40,7 @@ function dibujar() {
 }
 
 // ==========================================
-// 3. FUNCIONES PRINCIPALES (CRUD)
+// 3. FUNCIONES CRUD
 // ==========================================
 function añadirTarea() {
     if (input.value.trim() === '') return aviso('Escribe algo primero');
@@ -78,31 +78,31 @@ function exportarCSV() {
 }
 
 // ==========================================
-// 4. INTELIGENCIA ARTIFICIAL (SIMULACIÓN INTELIGENTE)
+// 4. INTELIGENCIA ARTIFICIAL (MOTOR LOCAL)
 // ==========================================
-async function usarIA() {
+function usarIA() {
     if (input.value.trim() === '') return aviso('Escribe la tarea para usar la IA');
     
-    aviso('🤖 La IA está pensando...');
+    aviso('🤖 Analizando texto...');
     
-    // Simulamos un pequeño tiempo de espera de red (como si llamara a Google)
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Lógica inteligente de clasificación por palabras clave
-    const texto = input.value.toLowerCase();
-    
-    if (texto.includes('comprar') || texto.includes('casa') || texto.includes('supermercado') || texto.includes('médico') || texto.includes('cumple') || texto.includes('comer')) {
-        categoria.value = 'Personal';
-    } else if (texto.includes('reunión') || texto.includes('jefe') || texto.includes('proyecto') || texto.includes('email') || texto.includes('informe') || texto.includes('trabajo')) {
-        categoria.value = 'Trabajo';
-    } else if (texto.includes('estudiar') || texto.includes('examen') || texto.includes('leer') || texto.includes('curso') || texto.includes('aprender') || texto.includes('tarea')) {
-        categoria.value = 'Estudio';
-    } else {
-        // Si no reconoce nada, usa la categoría que esté puesta
-        categoria.value = categoria.value;
-    }
-    
-    aviso(`🪄 IA aplicada: ${categoria.value}`);
+    // Simulamos un pequeño tiempo de espera para que parezca real
+    setTimeout(() => {
+        const texto = input.value.toLowerCase();
+        
+        // Palabras clave para cada categoría
+        const clavesTrabajo = ['reunión', 'jefe', 'proyecto', 'email', 'informe', 'trabajo', 'cliente', 'oficina'];
+        const clavesEstudio = ['estudiar', 'examen', 'leer', 'curso', 'aprender', 'deberes', 'libro', 'clase'];
+        
+        if (clavesTrabajo.some(palabra => texto.includes(palabra))) {
+            categoria.value = 'Trabajo';
+        } else if (clavesEstudio.some(palabra => texto.includes(palabra))) {
+            categoria.value = 'Estudio';
+        } else {
+            categoria.value = 'Personal'; // Por defecto
+        }
+        
+        aviso(`🪄 IA aplicada: ${categoria.value}`);
+    }, 800);
 }
 
 // ==========================================
