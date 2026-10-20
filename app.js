@@ -97,13 +97,12 @@ async function usarIA() {
     try {
         const prompt = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
         
-        // Petición configurada para claves modernas (AQ.)
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`, {
+        // Usamos gemini-pro y el método estándar de URL (el más compatible)
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        
+        const res = await fetch(url, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}` 
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 contents: [{ parts: [{ text: prompt }] }] 
             })
@@ -111,12 +110,13 @@ async function usarIA() {
         
         if (!res.ok) {
             const errorData = await res.json();
-            throw new Error(errorData.error.message || "Error desconocido de Google");
+            throw new Error(errorData.error.message || "Error de Google");
         }
 
         const data = await res.json();
         const respuesta = data.candidates[0].content.parts[0].text.trim();
         
+        // Asignamos la categoría
         if (respuesta.includes('Trabajo')) categoria.value = 'Trabajo';
         else if (respuesta.includes('Estudio')) categoria.value = 'Estudio';
         else categoria.value = 'Personal';
