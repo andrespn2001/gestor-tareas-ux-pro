@@ -1,8 +1,5 @@
-// --- CONFIGURACIÓN ---
-// Ya no pegamos la clave aquí para evitar bloqueos de seguridad de GitHub
 const API_KEY = localStorage.getItem('miClaveGemini'); 
 
-// --- ELEMENTOS DEL HTML ---
 const input = document.getElementById('input-tarea');
 const categoria = document.getElementById('input-categoria');
 const lista = document.getElementById('lista-tareas');
@@ -11,21 +8,17 @@ const notificacion = document.getElementById('notificaciones');
 
 let tareas = JSON.parse(localStorage.getItem('misTareas')) || [];
 
-// --- FUNCIONES BÁSICAS ---
-function guardar() {
-    localStorage.setItem('misTareas', JSON.stringify(tareas));
-}
+function guardar() { localStorage.setItem('misTareas', JSON.stringify(tareas)); }
 
 function aviso(msg) {
     notificacion.textContent = msg;
     notificacion.style.display = 'block';
-    setTimeout(() => notificacion.style.display = 'none', 3000);
+    setTimeout(() => notificacion.style.display = 'none', 4000);
 }
 
 function dibujar() {
     lista.innerHTML = '';
     let pendientes = 0;
-    
     tareas.forEach((t, index) => {
         if (!t.completada) pendientes++;
         const li = document.createElement('li');
@@ -39,16 +32,9 @@ function dibujar() {
     contador.textContent = `${pendientes} tareas pendientes`;
 }
 
-// --- FUNCIONES PRINCIPALES ---
 function añadirTarea() {
     if (input.value.trim() === '') return aviso('Escribe algo primero');
-    
-    tareas.push({
-        texto: input.value,
-        categoria: categoria.value,
-        completada: false
-    });
-    
+    tareas.push({ texto: input.value, categoria: categoria.value, completada: false });
     input.value = '';
     guardar();
     dibujar();
@@ -81,27 +67,22 @@ function exportarCSV() {
     aviso('CSV descargado 📥');
 }
 
-// --- FUNCIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI) ---
 async function usarIA() {
-    // Si no hay clave guardada, se la pedimos al usuario
     let clave = localStorage.getItem('miClaveGemini');
     if (!clave) {
-        clave = prompt("🤖 Para usar la IA, pega aquí tu clave de Google Gemini (la copiaste de AI Studio):");
-        if (clave) {
-            localStorage.setItem('miClaveGemini', clave);
-            aviso('✅ Clave guardada con éxito');
-        } else {
-            return aviso('❌ No se puede usar la IA sin clave');
-        }
+        clave = prompt("🤖 Pega aquí tu clave de Google Gemini:");
+        if (clave) localStorage.setItem('miClaveGemini', clave);
+        else return aviso('❌ Necesitas una clave para usar la IA');
     }
 
     if (input.value.trim() === '') return aviso('Escribe la tarea para usar la IA');
-    aviso('🤖 La IA está pensando...');
+    aviso('🤖 Pensando...');
     
     try {
         const promptText = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
         
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${clave}`, {
+        // Usamos el modelo 1.5-flash que es el estándar estable
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${clave}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
@@ -109,7 +90,10 @@ async function usarIA() {
         
         const data = await res.json();
         
-        if(!data.candidates) throw new Error("Clave incorrecta");
+        // Si Google nos da un error, lo mostramos en pantalla
+        if(data.error) {
+            throw new Error(data.error.message);
+        }
 
         const respuesta = data.candidates[0].content.parts[0].text.trim();
         
@@ -119,14 +103,13 @@ async function usarIA() {
         
         aviso(`🪄 IA aplicada: ${categoria.value}`);
     } catch (error) {
-        aviso('❌ Error con la IA. Revisa tu clave.');
+        // Aquí mostramos el error exacto para saber qué pasa
+        aviso(`❌ Error: ${error.message}`);
     }
 }
 
-// --- CONECTAR BOTONES ---
 document.getElementById('btn-añadir').addEventListener('click', añadirTarea);
 document.getElementById('btn-ia').addEventListener('click', usarIA);
 document.getElementById('btn-csv').addEventListener('click', exportarCSV);
 
-// --- INICIO ---
 dibujar();
