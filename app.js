@@ -1,5 +1,5 @@
 // --- CONFIGURACIÓN ---
-const API_KEY = 'PEGA_AQUI_TU_CLAVE_DE_GOOGLE'; // ⚠️ CAMBIA ESTO POR TU CLAVE
+const API_KEY = 'AQ.Ab8RN6JcicP9wS9una8n2jDD20RvGSP6LLTFSmMzUeYbP7hwQA'; // ⚠️ CAMBIA ESTO POR TU CLAVE
 
 // --- ELEMENTOS DEL HTML ---
 const input = document.getElementById('input-tarea');
