@@ -1,148 +1,117 @@
-// ==========================================
-// SIMULACIÓN DEL SERVIDOR
-// ==========================================
-let db = JSON.parse(localStorage.getItem('db-pro-max')) || [];
-let colaOffline = []; 
-const offlineSwitch = document.getElementById('offlineSwitch');
+// --- CONFIGURACIÓN ---
+const API_KEY = 'AQ.Ab8RN6Lq_t-PnbZVGD2kBE1LS_WZAKKvIfL2214kNGdDqb3AUw'; // ⚠️ CAMBIA ESTO POR TU CLAVE (La que copiaste de Google)
 
-function isOnline() { return !offlineSwitch.checked; }
+// --- ELEMENTOS DEL HTML ---
+const input = document.getElementById('input-tarea');
+const categoria = document.getElementById('input-categoria');
+const lista = document.getElementById('lista-tareas');
+const contador = document.getElementById('contador');
+const notificacion = document.getElementById('notificaciones');
 
-function guardarDB() { localStorage.setItem('db-pro-max', JSON.stringify(db)); }
+let tareas = JSON.parse(localStorage.getItem('misTareas')) || [];
 
-const mockSupabase = {
-    select: () => new Promise(resolve => setTimeout(() => resolve({ data: [...db] }), 600)),
-    insert: (task) => new Promise((resolve, reject) => {
-        if (!isOnline()) return reject(new Error("Offline"));
-        setTimeout(() => {
-            const newTask = { id: Date.now(), ...task };
-            db.unshift(newTask); guardarDB(); resolve({ data: [newTask] });
-        }, 500);
-    }),
-    update: (id, changes) => new Promise((resolve, reject) => {
-        if (!isOnline()) return reject(new Error("Offline"));
-        setTimeout(() => {
-            db = db.map(t => t.id === id ? { ...t, ...changes } : t); guardarDB();
-            resolve({ data: db.filter(t => t.id === id) });
-        }, 400);
-    }),
-    delete: (id) => new Promise((resolve, reject) => {
-        if (!isOnline()) return reject(new Error("Offline"));
-        setTimeout(() => { db = db.filter(t => t.id !== id); guardarDB(); resolve({}); }, 400);
-    })
-};
-
-// ==========================================
-// SISTEMA DE TOASTS
-// ==========================================
-function toast(msg, tipo = 'info') {
-    const div = document.createElement('div');
-    div.className = `notification ${tipo}`;
-    div.textContent = msg;
-    document.getElementById('notifications').appendChild(div);
-    setTimeout(() => div.remove(), 3000);
+// --- FUNCIONES BÁSICAS ---
+function guardar() {
+    localStorage.setItem('misTareas', JSON.stringify(tareas));
 }
 
-// ==========================================
-// LÓGICA DE LA APP
-// ==========================================
-let tasks = [];
-const taskList = document.getElementById('taskList');
-const taskInput = document.getElementById('taskInput');
-const addButton = document.getElementById('addButton');
-
-function actualizarContador() {
-    const pendientes = tasks.filter(t => !t.completed).length;
-    document.getElementById('contador').textContent = pendientes;
+function aviso(msg) {
+    notificacion.textContent = msg;
+    notificacion.style.display = 'block';
+    setTimeout(() => notificacion.style.display = 'none', 3000);
 }
 
-function renderTasks() {
-    taskList.innerHTML = '';
-    tasks.forEach(task => {
-        const li = document.createElement('li');
-        li.dataset.id = task.id;
-        if (task.completed) li.classList.add('completed');
-        li.innerHTML = `
-            <div class="task-info" onclick="toggleTask(${task.id})">
-                <span class="task-text">${task.text}</span>
-            </div>
-            <button class="delete-btn" onclick="deleteTask(${task.id})">🗑</button>
-        `;
-        taskList.appendChild(li);
-    });
-    actualizarContador(); 
-}
-
-async function cargarTareas() {
-    try {
-        const { data } = await mockSupabase.select();
-        tasks = data;
-        renderTasks();
-    } catch (e) { toast('Error al cargar', 'error'); }
-}
-
-async function recargarForzado(btn) {
-    btn.classList.add('loading');
-    await cargarTareas();
-    btn.classList.remove('loading');
-    toast('Datos actualizados desde el servidor', 'success');
-}
-
-async function addTask() {
-    const text = taskInput.value.trim();
-    if (!text) return toast('Escribe algo', 'error');
-
-    if (!isOnline()) {
-        colaOffline.push({ tipo: 'add', text });
-        tasks.unshift({ id: Date.now(), text, completed: false, isLocal: true });
-        renderTasks();
-        taskInput.value = '';
-        toast('Guardado offline. Sincronizando al conectar...', 'info');
-        return;
-    }
-
-    addButton.classList.add('loading');
-    try {
-        const { data } = await mockSupabase.insert({ text, completed: false });
-        tasks.unshift(data[0]);
-        renderTasks();
-        taskInput.value = '';
-    } catch (e) { toast('Error al añadir', 'error'); } 
-    finally { addButton.classList.remove('loading'); }
-}
-
-async function toggleTask(id) {
-    const t = tasks.find(x => x.id === id);
-    t.completed = !t.completed;
-    renderTasks(); 
-
-    if (isOnline()) await mockSupabase.update(id, { completed: t.completed });
-}
-
-async function deleteTask(id) {
-    const li = document.querySelector(`li[data-id="${id}"]`);
-    if (li) li.classList.add('removing'); 
+function dibujar() {
+    lista.innerHTML = '';
+    let pendientes = 0;
     
-    setTimeout(async () => {
-        tasks = tasks.filter(t => t.id !== id);
-        renderTasks();
-        if (isOnline()) await mockSupabase.delete(id);
-    }, 300); 
+    tareas.forEach((t, index) => {
+        if (!t.completada) pendientes++;
+        const li = document.createElement('li');
+        if (t.completada) li.className = 'completada';
+        li.innerHTML = `
+            <div onclick="cambiarEstado(${index})">${t.texto} <span class="tag">${t.categoria}</span></div>
+            <button onclick="borrar(${index})">🗑</button>
+        `;
+        lista.appendChild(li);
+    });
+    contador.textContent = `${pendientes} tareas pendientes`;
 }
 
-offlineSwitch.addEventListener('change', async () => {
-    if (isOnline() && colaOffline.length > 0) {
-        toast(`Sincronizando ${colaOffline.length} tareas...`, 'info');
-        for (let accion of colaOffline) {
-            if (accion.tipo === 'add') {
-                await mockSupabase.insert({ text: accion.text, completed: false });
-            }
-        }
-        colaOffline = [];
-        await cargarTareas();
-        toast('¡Todo sincronizado!', 'success');
-    } else if (!isOnline()) {
-        toast('Modo Offline activado', 'error');
-    }
-});
+// --- FUNCIONES PRINCIPALES ---
+function añadirTarea() {
+    if (input.value.trim() === '') return aviso('Escribe algo primero');
+    
+    tareas.push({
+        texto: input.value,
+        categoria: categoria.value,
+        completada: false
+    });
+    
+    input.value = '';
+    guardar();
+    dibujar();
+    aviso('Tarea añadida ✅');
+}
 
-cargarTareas();
+function cambiarEstado(index) {
+    tareas[index].completada = !tareas[index].completada;
+    guardar();
+    dibujar();
+}
+
+function borrar(index) {
+    tareas.splice(index, 1);
+    guardar();
+    dibujar();
+}
+
+function exportarCSV() {
+    if (tareas.length === 0) return aviso('No hay tareas');
+    let csv = "Tarea,Categoria,Completada\n";
+    tareas.forEach(t => {
+        csv += `"${t.texto}",${t.categoria},${t.completada ? 'Si' : 'No'}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mis_tareas.csv';
+    a.click();
+    aviso('CSV descargado 📥');
+}
+
+// --- FUNCIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI) ---
+async function usarIA() {
+    if (input.value.trim() === '') return aviso('Escribe la tarea para usar la IA');
+    
+    aviso('🤖 La IA está pensando...');
+    
+    try {
+        const prompt = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
+        
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        
+        const data = await res.json();
+        const respuesta = data.candidates[0].content.parts[0].text.trim();
+        
+        if (respuesta.includes('Trabajo')) categoria.value = 'Trabajo';
+        else if (respuesta.includes('Estudio')) categoria.value = 'Estudio';
+        else categoria.value = 'Personal';
+        
+        aviso(`🪄 IA aplicada: ${categoria.value}`);
+    } catch (error) {
+        aviso('❌ Error con la IA. Revisa tu clave.');
+    }
+}
+
+// --- CONECTAR BOTONES ---
+document.getElementById('btn-añadir').addEventListener('click', añadirTarea);
+document.getElementById('btn-ia').addEventListener('click', usarIA);
+document.getElementById('btn-csv').addEventListener('click', exportarCSV);
+
+// --- INICIO ---
+dibujar();
