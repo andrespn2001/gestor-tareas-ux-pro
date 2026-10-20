@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANDRES LUCAS — Gestor de Tareas PRO MAX</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="notifications"></div>
+
+    <div class="app-container">
+        <header>
+            <h1>☁️ ANDRES LUCAS PRO MAX</h1>
+            <div class="counter-badge"><span id="contador">0</span> tareas pendientes</div>
+            
+            <label class="offline-toggle">
+                <input type="checkbox" id="offlineSwitch"> 📴 Offline
+            </label>
+        </header>
+        
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="taskInput" placeholder="Nueva tarea...">
+                <button class="btn-primary" id="addButton" onclick="addTask()">Añadir</button>
+            </div>
+            <div class="action-row">
+                <button class="btn-secondary" style="flex:1" onclick="recargarForzado(this)">🔄 Recargar</button>
+            </div>
+        </div>
+
+        <ul id="taskList"></ul>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
