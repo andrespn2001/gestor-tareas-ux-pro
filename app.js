@@ -1,5 +1,6 @@
 // --- CONFIGURACIÓN ---
-const API_KEY = 'AQ.Ab8RN6Lq_t-PnbZVGD2kBE1LS_WZAKKvIfL2214kNGdDqb3AUw'; // ⚠️ CAMBIA ESTO POR TU CLAVE (La que copiaste de Google)
+// Ya no pegamos la clave aquí para evitar bloqueos de seguridad de GitHub
+const API_KEY = localStorage.getItem('miClaveGemini'); 
 
 // --- ELEMENTOS DEL HTML ---
 const input = document.getElementById('input-tarea');
@@ -82,20 +83,34 @@ function exportarCSV() {
 
 // --- FUNCIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI) ---
 async function usarIA() {
+    // Si no hay clave guardada, se la pedimos al usuario
+    let clave = localStorage.getItem('miClaveGemini');
+    if (!clave) {
+        clave = prompt("🤖 Para usar la IA, pega aquí tu clave de Google Gemini (la copiaste de AI Studio):");
+        if (clave) {
+            localStorage.setItem('miClaveGemini', clave);
+            aviso('✅ Clave guardada con éxito');
+        } else {
+            return aviso('❌ No se puede usar la IA sin clave');
+        }
+    }
+
     if (input.value.trim() === '') return aviso('Escribe la tarea para usar la IA');
-    
     aviso('🤖 La IA está pensando...');
     
     try {
-        const prompt = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
+        const promptText = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
         
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${clave}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
         });
         
         const data = await res.json();
+        
+        if(!data.candidates) throw new Error("Clave incorrecta");
+
         const respuesta = data.candidates[0].content.parts[0].text.trim();
         
         if (respuesta.includes('Trabajo')) categoria.value = 'Trabajo';
