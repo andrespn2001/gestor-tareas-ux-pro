@@ -1,8 +1,9 @@
-// --- CONFIGURACIÓN ---
-// ⚠️ AQUÍ TIENES QUE PEGAR TU CLAVE DE GOOGLE ENTRE LAS COMILLAS
-const API_KEY = 'AQ.Ab8RN6L4Flrv_1BDx2wbS-S0n5hL9xcy7wKDZNsrU95i-wUWvA'; 
+// ==========================================
+// 1. CONFIGURACIÓN
+// ==========================================
+// ⚠️ PEGA TU CLAVE AQUÍ ABAJO (la que empieza por AQ.)
+const API_KEY = 'AQ.Ab8RN6LhDK7U4SdOqUhbqeu_k8UOFi_LNob-HknDH2BVkPTz4w'; 
 
-// --- ELEMENTOS DEL HTML ---
 const input = document.getElementById('input-tarea');
 const categoria = document.getElementById('input-categoria');
 const lista = document.getElementById('lista-tareas');
@@ -11,7 +12,9 @@ const notificacion = document.getElementById('notificaciones');
 
 let tareas = JSON.parse(localStorage.getItem('misTareas')) || [];
 
-// --- FUNCIONES BÁSICAS ---
+// ==========================================
+// 2. FUNCIONES BÁSICAS (UI)
+// ==========================================
 function guardar() {
     localStorage.setItem('misTareas', JSON.stringify(tareas));
 }
@@ -19,7 +22,7 @@ function guardar() {
 function aviso(msg) {
     notificacion.textContent = msg;
     notificacion.style.display = 'block';
-    setTimeout(() => notificacion.style.display = 'none', 3000);
+    setTimeout(() => notificacion.style.display = 'none', 4000);
 }
 
 function dibujar() {
@@ -31,15 +34,17 @@ function dibujar() {
         const li = document.createElement('li');
         if (t.completada) li.className = 'completada';
         li.innerHTML = `
-            <div onclick="cambiarEstado(${index})">${t.texto} <span class="tag">${t.categoria}</span></div>
-            <button onclick="borrar(${index})">🗑</button>
+            <div onclick="cambiarEstado(${index})" style="flex:1; cursor:pointer;">${t.texto} <span class="tag">${t.categoria}</span></div>
+            <button onclick="borrar(${index})" style="background:none; border:none; color:white; cursor:pointer;">🗑</button>
         `;
         lista.appendChild(li);
     });
     contador.textContent = `${pendientes} tareas pendientes`;
 }
 
-// --- FUNCIONES PRINCIPALES ---
+// ==========================================
+// 3. FUNCIONES PRINCIPALES (CRUD)
+// ==========================================
 function añadirTarea() {
     if (input.value.trim() === '') return aviso('Escribe algo primero');
     
@@ -81,7 +86,9 @@ function exportarCSV() {
     aviso('CSV descargado 📥');
 }
 
-// --- FUNCIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI) ---
+// ==========================================
+// 4. INTELIGENCIA ARTIFICIAL (GEMINI)
+// ==========================================
 async function usarIA() {
     if (input.value.trim() === '') return aviso('Escribe la tarea para usar la IA');
     
@@ -90,15 +97,21 @@ async function usarIA() {
     try {
         const prompt = `Clasifica esta tarea en solo una palabra: "Trabajo", "Personal" o "Estudio". Tarea: "${input.value}"`;
         
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        // Petición configurada para claves modernas (AQ.)
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}` 
+            },
+            body: JSON.stringify({ 
+                contents: [{ parts: [{ text: prompt }] }] 
+            })
         });
         
         if (!res.ok) {
             const errorData = await res.json();
-            throw new Error(errorData.error.message || "Error en la petición");
+            throw new Error(errorData.error.message || "Error desconocido de Google");
         }
 
         const data = await res.json();
@@ -115,10 +128,15 @@ async function usarIA() {
     }
 }
 
-// --- CONECTAR BOTONES ---
+// ==========================================
+// 5. EVENTOS E INICIO
+// ==========================================
 document.getElementById('btn-añadir').addEventListener('click', añadirTarea);
 document.getElementById('btn-ia').addEventListener('click', usarIA);
 document.getElementById('btn-csv').addEventListener('click', exportarCSV);
 
-// --- INICIO ---
+input.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') añadirTarea();
+});
+
 dibujar();
